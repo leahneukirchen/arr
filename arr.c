@@ -13,12 +13,6 @@
 char lastsplit;
 static char *s;
 
-// TODO: negative numbers count from end
-// TODO: C-style literals
-// %FIELD shortcut?
-// default to as many - as there are references to fields?
-// option to don't stop at first EOF, fill with string (default empty)
-
 //  "%{" FIELD (CHOP FIELD)* (("|" | "*") FIELD ((, | :) FIELD)*)? "}"
 
 void
@@ -241,27 +235,6 @@ fmt(const char *pattern, char **args, size_t argsnum)
 
 int
 main(int argc, char *argv[]) {
-	char s[] = "foo,bar,baz,quux";
-	char t[] = "bo/ing;zi/ng;zo/ng";
-	char v[] = "  words  wordss\t wordsss";
-	char *a[] = { 0, s, t, v };
-	/* fmt("hello\n", a); */
-	/* fmt("%{1}\n", a); */
-	/* fmt("%{2}\n", a); */
-	/* fmt("%{1,2}\n", a); */
-	/* fmt(">>%{2}<<\n", a); */
-	/* fmt(">>%{2;|1:3}<<\n", a); */
-	/* fmt(">>%{2;|3:1}<<\n", a); */
-
-	/* fmt(">>%{2;|1:3} %{2;|3:1} %{2;|1,3}<<\n", a); */
-	/* fmt(">>%{2;|1,2,3} %{2;|3,2,1} %{2;|1,3}<<\n", a); */
-	/* fmt(">>%{2;2}<<\n", a); */
-	/* fmt(">>%{2;2/1}<<\n", a); */
-	/* fmt(">>%{3 |1:3}<<\n", a); */
-	/* fmt(">>%{3 1*1}<<\n", a); */
-	/* fmt(">>%{3 1*1:4}<<\n", a); */
-	/* fmt("%zz%%zz\n", a); */
-
         // number of implicit stdin arguments
         int stdins = 0;
 
