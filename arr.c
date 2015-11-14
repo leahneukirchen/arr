@@ -138,8 +138,12 @@ fmt_inner(char **args)
 		case '"':
 			s++;
 			lastsplit = *s;
-			// XXX check for second "
 			s++;
+			if (*s != '"') {
+				fprintf(stderr, "invalid syntax '\"%c%s'\n",
+				    lastsplit, s);
+				exit(1);
+			}
 			s++;
 			goto split2;
 		default: { /* split at char, recurse */
