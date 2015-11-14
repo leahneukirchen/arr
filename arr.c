@@ -222,17 +222,23 @@ main(int argc, char *argv[]) {
 	/* fmt(">>%{3 1*1:4}<<\n", a); */
 	/* fmt("%zz%%zz\n", a); */
 
-	// default to stdin when no file arguments are given
-	if (argc == 2) {
-		argv[argc] = "-";
-		argc++;
+        // number of implicit stdin arguments
+        int stdins = 0;
+
+	if (argc < 2) {
+		fprintf(stderr, "Usage: %s FMT FILES...\n", argv[0]);
+		exit(1);
 	}
 
-	FILE **files = calloc(argc, sizeof (FILE *));
-	char **lines = calloc(argc, sizeof (char *));
+	// default to stdin when no file arguments are given
+	if (argc == 2)
+		stdins++;
+
+	FILE **files = calloc(argc+stdins, sizeof (FILE *));
+	char **lines = calloc(argc+stdins, sizeof (char *));
 	int i;
-	for (i = 1; i < argc-1; i++)
-		if (strcmp(argv[i+1], "-") == 0)
+	for (i = 1; i < argc-1+stdins; i++)
+		if (i >= argc-1 || strcmp(argv[i+1], "-") == 0)
 			files[i] = stdin;
 		else
 			files[i] = fopen(argv[i], "r"); // XXX error handling
@@ -242,7 +248,7 @@ main(int argc, char *argv[]) {
 	int delim = '\n';
 	while (1) {
 		eof = 0;
-		for (i = 1; i < argc-1; i++) {
+		for (i = 1; i < argc-1+stdins; i++) {
 			int read = getdelim(lines+i, &len, delim, files[i]);
 			// XXX error handling
 			if (lines[i][read-1] == delim)  // strip delimiter
