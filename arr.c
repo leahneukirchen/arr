@@ -22,7 +22,7 @@ static char *s;
 //  "%{" FIELD (CHOP FIELD)* (("|" | "*") FIELD ((, | :) FIELD)*)? "}"
 
 void
-fmt_range(char **args, int bytewise)
+fmt_range(char **args, int bytewise, size_t argsnum)
 {
 	long n = 0;
 	char *end;
@@ -42,11 +42,13 @@ fmt_range(char **args, int bytewise)
 			}
 			s = end;
 			if (bytewise) {
-				printf("%c", args[0][n-1]);
+				if (n <= argsnum)
+					printf("%c", args[0][n-1]);
 			} else {
 				if (printed++)
 					printf("%c", lastsplit);
-				printf("%s", args[n]);
+				if (n < argsnum)
+					printf("%s", args[n]);
 			}
 			break;
 		case ',':
@@ -62,8 +64,12 @@ fmt_range(char **args, int bytewise)
 				fprintf(stderr, "can't parse number at '%s'.\n", s);
 				exit(1);
 			}
+			if (s == end)  // default to max range
+				n = argsnum;
 			s = end;
 			if (bytewise) {
+				if (n > argsnum)
+					n = argsnum;
 				if (l <= n)
 					for (l++; l <= n; l++)
 						printf("%c", args[0][l-1]);
@@ -71,6 +77,8 @@ fmt_range(char **args, int bytewise)
 					for (l--; l >= n; l--)
 						printf("%c", args[0][l-1]);
 			} else {
+				if (n >= argsnum)
+					n = argsnum-1;
 				if (l <= n)
 					for (l++; l <= n; l++) {
 						if (printed++)
@@ -97,7 +105,7 @@ fmt_range(char **args, int bytewise)
 }
 
 void
-fmt_inner(char **args)
+fmt_inner(char **args, size_t argsnum)
 {
 	long field, newfield;
 	char *end;
@@ -123,17 +131,19 @@ fmt_inner(char **args)
 			break;
 		case '|':
 			s++;
-			fmt_range(args, 0);
+			fmt_range(args, 0, argsnum);
 			return;
 		case '*':
 			s++;
-			fmt_range(args+field, 1);
+			if (field >= 0 && field < argsnum-1)
+				fmt_range(args+field, 1, strlen(args[field]));
+			else
+				fmt_range(args, 1, 0);
 			return;
 		case '}':
 			s++;
-			if (field == 0)
-				abort();
-			printf("%s", args[field]);
+			if (field >= 1 && field < argsnum-1)
+				printf("%s", args[field]);
 			return;
 		case '"':
 			s++;
@@ -154,7 +164,11 @@ fmt_inner(char **args)
 			lastsplit = *s;
 			s++;
 			split2:;
-			char *t = strdup(args[field]);
+			char *t;
+			if (field >= 1 && field < argsnum-1)
+				t = strdup(args[field]);
+			else
+				t = strdup("");
 			char **newargs = calloc(32 /*XXX*/, sizeof (char *));
 			if (lastsplit == ' ') {  // split on any ws
 				while (isspace((unsigned char)*t))
@@ -177,6 +191,7 @@ fmt_inner(char **args)
 				}
 			}
 			args = newargs;
+			argsnum = i;
 			field = 0;
 		}
 		}
@@ -184,7 +199,7 @@ fmt_inner(char **args)
 }
 
 void
-fmt(const char *pattern, char **args)
+fmt(const char *pattern, char **args, size_t argsnum)
 {
 	s = pattern;
 	lastsplit = '\t';
@@ -200,7 +215,7 @@ fmt(const char *pattern, char **args)
 				break;
 			case '{':
 				s++;
-				fmt_inner(args);
+				fmt_inner(args, argsnum);
 				break;
 			default:
 				putchar('%');
@@ -283,7 +298,7 @@ main(int argc, char *argv[]) {
 		}
 		if (eof)
 			break;
-		fmt(argv[1], lines);
+		fmt(argv[1], lines, argc+stdins);
 		printf("%c", delim);
 	}
 
