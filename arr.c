@@ -42,12 +42,18 @@ fmt_range(char **args, int bytewise, size_t argsnum)
 			}
 			s = end;
 			if (bytewise) {
-				if (n <= argsnum)
+				if (n < 0)
+					n += argsnum + 1;
+				if (n < 0)
+					n = 0;
+				if (n >= 1 && n <= argsnum)
 					printf("%c", args[0][n-1]);
 			} else {
+				if (n < 0)
+					n += argsnum;
 				if (printed++)
 					printf("%c", lastsplit);
-				if (n < argsnum)
+				if (n > 0 && n < argsnum)
 					printf("%s", args[n]);
 			}
 			break;
@@ -64,10 +70,14 @@ fmt_range(char **args, int bytewise, size_t argsnum)
 				fprintf(stderr, "can't parse number at '%s'.\n", s);
 				exit(1);
 			}
-			if (s == end)  // default to max range
-				n = argsnum;
+			if (s == end)  // default to -1
+				n = -1;
 			s = end;
 			if (bytewise) {
+				if (n < 0)
+					n += argsnum + 1;
+				if (n < 0)
+					n = 0;
 				if (n > argsnum)
 					n = argsnum;
 				if (l <= n)
@@ -77,6 +87,8 @@ fmt_range(char **args, int bytewise, size_t argsnum)
 					for (l--; l >= n; l--)
 						printf("%c", args[0][l-1]);
 			} else {
+				if (n < 0)
+					n += argsnum;
 				if (n >= argsnum)
 					n = argsnum-1;
 				if (l <= n)
@@ -127,6 +139,8 @@ fmt_inner(char **args, size_t argsnum)
 			if (s == end && *s == '-')
 				goto split;
 			s = end;
+			if (newfield < 0)
+				newfield += argsnum;
 			field = newfield;
 			break;
 		case '|':
@@ -135,14 +149,14 @@ fmt_inner(char **args, size_t argsnum)
 			return;
 		case '*':
 			s++;
-			if (field >= 0 && field < argsnum-1)
+			if (field >= 0 && field < argsnum)
 				fmt_range(args+field, 1, strlen(args[field]));
 			else
 				fmt_range(args, 1, 0);
 			return;
 		case '}':
 			s++;
-			if (field >= 1 && field < argsnum-1)
+			if (field >= 1 && field < argsnum)
 				printf("%s", args[field]);
 			return;
 		case '"':
@@ -158,14 +172,11 @@ fmt_inner(char **args, size_t argsnum)
 			goto split2;
 		default: { /* split at char, recurse */
 			split:
-			/* TODO "|" */
-			if (field == 0)
-				abort();
 			lastsplit = *s;
 			s++;
 			split2:;
 			char *t;
-			if (field >= 1 && field < argsnum-1)
+			if (field >= 1 && field < argsnum)
 				t = strdup(args[field]);
 			else
 				t = strdup("");
@@ -300,7 +311,7 @@ main(int argc, char *argv[]) {
 		}
 		if (eof)
 			break;
-		fmt(argv[1], lines, argc+stdins);
+		fmt(argv[1], lines, argc-1+stdins);
 		printf("%c", delim);
 	}
 
