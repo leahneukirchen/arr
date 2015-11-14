@@ -17,6 +17,7 @@ static char *s;
 // TODO: C-style literals
 // %FIELD shortcut?
 // default to as many - as there are references to fields?
+// option to don't stop at first EOF, fill with string (default empty)
 
 //  "%{" FIELD (CHOP FIELD)* (("|" | "*") FIELD ((, | :) FIELD)*)? "}"
 
@@ -35,7 +36,10 @@ fmt_range(char **args, int bytewise)
 		case '-':
 			errno = 0;
 			n = strtol(s, &end, 10);
-			// XXX error handling
+			if (errno != 0) {
+				fprintf(stderr, "can't parse number at '%s'.\n", s);
+				exit(1);
+			}
 			s = end;
 			if (bytewise) {
 				printf("%c", args[0][n-1]);
@@ -54,7 +58,10 @@ fmt_range(char **args, int bytewise)
 			long l = n;
 			errno = 0;
 			n = strtol(s, &end, 10);
-			// XXX error handling
+			if (errno != 0) {
+				fprintf(stderr, "can't parse number at '%s'.\n", s);
+				exit(1);
+			}
 			s = end;
 			if (bytewise) {
 				if (l <= n)
@@ -105,7 +112,10 @@ fmt_inner(char **args)
 		case '-':
 			errno = 0;
 			newfield = strtol(s, &end, 10);
-			// XXX error handling
+			if (errno != 0) {
+				fprintf(stderr, "can't parse number at '%s'.\n", s);
+				exit(1);
+			}
 			if (s == end && *s == '-')
 				goto split;
 			s = end;
@@ -238,10 +248,16 @@ main(int argc, char *argv[]) {
 	char **lines = calloc(argc+stdins, sizeof (char *));
 	int i;
 	for (i = 1; i < argc-1+stdins; i++)
-		if (i >= argc-1 || strcmp(argv[i+1], "-") == 0)
+		if (i >= argc-1 || strcmp(argv[i+1], "-") == 0) {
 			files[i] = stdin;
-		else
-			files[i] = fopen(argv[i], "r"); // XXX error handling
+		} else {
+			files[i] = fopen(argv[i+1], "r");
+			if (!files[i]) {
+				fprintf(stderr, "%s: %s: %s\n",
+				    argv[0], argv[i+1], strerror(errno));
+				exit(1);
+			}
+		}
 
 	int eof;
 	size_t len;
@@ -250,11 +266,16 @@ main(int argc, char *argv[]) {
 		eof = 0;
 		for (i = 1; i < argc-1+stdins; i++) {
 			int read = getdelim(lines+i, &len, delim, files[i]);
-			// XXX error handling
+			if (read == -1) {
+				if (feof(files[i])) {
+					lines[i] = strdup("(EOF)");
+					eof++;
+				} else {
+					exit(1);
+				}
+			}
 			if (lines[i][read-1] == delim)  // strip delimiter
 				lines[i][read-1] = 0;
-			if (feof(files[i]))
-				eof++;
 		}
 		if (eof)
 			break;
