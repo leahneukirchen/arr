@@ -292,9 +292,11 @@ main(int argc, char *argv[]) {
 				} else {
 					exit(1);
 				}
+			} else {
+				// strip delimiter
+				if (lines[i][read-1] == delim)
+					lines[i][read-1] = 0;
 			}
-			if (lines[i][read-1] == delim)  // strip delimiter
-				lines[i][read-1] = 0;
 		}
 		if (eof)
 			break;
