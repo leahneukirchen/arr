@@ -261,7 +261,7 @@ usage:
 	char **arglist = argv + optind;  // starts counting at 1
 
 	// default to stdin when no file arguments are given
-	if (argnum == 0)
+	if (argnum <= 1)
 		stdins++;
 
 	FILE **files = calloc(argnum+stdins, sizeof (FILE *));
