@@ -10,8 +10,6 @@
 #include <string.h>
 #include <ctype.h>
 
-long range[32];
-long rangemax;
 char lastsplit;
 static char *s;
 
@@ -176,7 +174,6 @@ fmt(const char *pattern, char **args)
 {
 	s = pattern;
 	lastsplit = '\t';
-	rangemax = 0;
 
 	while (*s) {
 		switch (*s) {
