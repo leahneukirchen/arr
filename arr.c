@@ -4,11 +4,12 @@
 ##% gcc -Os -Wall -g -o $STEM $FILE -Wextra -Wwrite-strings
 */
 
+#include <ctype.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
 #include <string.h>
-#include <ctype.h>
+#include <unistd.h>
 
 char lastsplit;
 static char *s;
@@ -238,40 +239,58 @@ main(int argc, char *argv[]) {
         // number of implicit stdin arguments
         int stdins = 0;
 
-	if (argc < 2) {
+	char c;
+	char *padding = "";
+	int delim = '\n';
+
+	while ((c = getopt(argc, argv, "0Pp:")) != -1)
+		switch(c) {
+		case '0': delim = '\0'; break;
+		case 'p': padding = optarg; break;
+		case 'P': padding = 0; break;
+                default: goto usage;
+		}
+
+	if (optind >= argc) {
+usage:
 		fprintf(stderr, "Usage: %s FMT FILES...\n", argv[0]);
 		exit(1);
 	}
 
+	int argnum = argc - optind;
+	char **arglist = argv + optind;  // starts counting at 1
+
 	// default to stdin when no file arguments are given
-	if (argc == 2)
+	if (argnum == 0)
 		stdins++;
 
-	FILE **files = calloc(argc+stdins, sizeof (FILE *));
-	char **lines = calloc(argc+stdins, sizeof (char *));
+	FILE **files = calloc(argnum+stdins, sizeof (FILE *));
+	char **lines = calloc(argnum+stdins, sizeof (char *));
 	int i;
-	for (i = 1; i < argc-1+stdins; i++)
-		if (i >= argc-1 || strcmp(argv[i+1], "-") == 0) {
+	for (i = 1; i < argnum+stdins; i++) {
+		if (i >= argnum || strcmp(arglist[i], "-") == 0) {
 			files[i] = stdin;
 		} else {
-			files[i] = fopen(argv[i+1], "r");
+			files[i] = fopen(arglist[i], "r");
 			if (!files[i]) {
 				fprintf(stderr, "%s: %s: %s\n",
-				    argv[0], argv[i+1], strerror(errno));
+				    argv[0], arglist[i], strerror(errno));
 				exit(1);
 			}
 		}
+	}
 
 	int eof;
 	size_t len;
-	int delim = '\n';
 	while (1) {
 		eof = 0;
-		for (i = 1; i < argc-1+stdins; i++) {
+		for (i = 1; i < argnum+stdins; i++) {
 			int read = getdelim(lines+i, &len, delim, files[i]);
 			if (read == -1) {
 				if (feof(files[i])) {
-					lines[i] = strdup("(EOF)");
+					if (!padding)
+						exit(0);
+					lines[i] = strdup(padding);
 					eof++;
 				} else {
 					exit(1);
@@ -282,9 +301,9 @@ main(int argc, char *argv[]) {
 					lines[i][read-1] = 0;
 			}
 		}
-		if (eof)
+		if (eof >= argnum+stdins-1)
 			break;
-		fmt(argv[1], lines, argc-1+stdins);
+		fmt(arglist[0], lines, argnum+stdins);
 		printf("%c", delim);
 	}
 
