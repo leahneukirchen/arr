@@ -1,0 +1,156 @@
+.Dd February 14, 2016
+.Dt ARR 1
+.Os
+.Sh NAME
+.Nm arr
+.Nd (re)arrange and select fields on each line
+.Sh SYNOPSIS
+.Nm
+.Op Fl 0
+.Op Fl P | Fl p Ar padding
+.Ar expr
+.Op Ar files\ ...
+.Sh DESCRIPTION
+.Nm
+unifies and extends the features of
+.Xr cut 1 ,
+.Xr paste 1 ,
+and provides an alternative to
+.Xr dicer 5 .
+.Pp
+.Nm
+will read one line (or zero separated string, when
+.Fl 0
+is used) from each
+.Ar file
+passed on the command line,
+and then print the result of expanding
+.Ar expr .
+.Pp
+By default, reading continues until all files are exhausted.
+Ended files continue generating empty strings,
+or
+.Ar padding
+when
+.Fl p
+is used.
+When
+.Fl P
+is used, reading stops as soon as one file is exhausted.
+.Sh FORMATTING EXPRESSIONS
+.Ar expr
+is read as a string containing escape sequences
+.Ql "%{...}"
+which are parsed according to the following EBNF:
+.Bd -literal -offset indent
+<expr>   ::= <fields> (("|" <char> | "*") <fields>)* ("&" <char>)?
+<fields> ::= "~"? <field> ("," <field>)*
+<field>  ::= "-"? "\d"+ | ("-"? "\d"+)? ":" ("-"? "\d"+)?
+.Ed
+.Pp
+Fields are specified by their position,
+negative numbers count from the end.
+Field ranges are written like
+.Cm Ar n Ns Cm ":" Ns Ar m
+where
+.Ar n
+and
+.Ar m
+are optional and default to 1 and -1 respectively.
+If
+.Ar n
+is bigger than
+.Ar m ,
+fields are expanded in reverse order.
+.Pp
+Field ranges are combined using
+.Cm ","
+and an initial
+.Cm "~"
+negates the whole set of field selections.
+.Pp
+Selected fields are joined with the last separator,
+and then split on
+.Ar c
+when
+.Cm "|" Ns Ar c
+is used.
+Alternatively,
+.Cm "*"
+splits byte-wise.
+A final
+.Cm "&" Ns Ar c
+joins the selected fields using
+.Ar c
+again.
+.Pp
+The first set of fields corresponds to the lines read from each file.
+.Sh EXIT STATUS
+.Ex -std
+.Sh EXAMPLES
+Print all users from
+.Pa /etc/passwd
+(read:
+.So
+take line from file 1, split on
+.Cm ":" ,
+print field 1.
+.Sc ) :
+.Bd -literal -offset indent
+arr '%{1|:1}' /etc/passwd
+.Ed
+.Pp
+List all basenames of shells used
+(read
+.So
+take line from file 1, split on
+.Cm ":" ,
+take last field,
+split on
+.Cm "/" ,
+take last field.
+.Sc ) :
+.Bd -literal -offset indent
+arr '%{1|:-1|/-1}' /etc/passwd | sort -u
+.Ed
+.Pp
+Remove the TLD from a list of domains:
+.Bd -literal -offset indent
+arr '%{1|.~-1}'
+.Ed
+.Pp
+Generate PTR addresses for a list of IPv4s:
+.Bd -literal -offset indent
+arr '%{1|.-1:1}.in-addr.arpa'
+.Ed
+.Pp
+Only print the first 80 chars of each line:
+.Bd -literal -offset indent
+arr '%{1*:80}'
+.Ed
+.Pp
+Double space text:
+.Bd -literal -offset indent
+arr '%{1*:& }'
+.Ed
+.Pp
+Format a phone number:
+.Bd -literal -offset indent
+echo 8005551212 | arr '(%{1*1:3})%{1*4:6}-%{1*7:}'
+.Ed
+.Sh SEE ALSO
+.Xr cut 1 ,
+.Xr paste 1 ,
+.Xr dicer 5
+.Sh AUTHORS
+.An Christian Neukirchen Aq Mt chneukirchen@gmail.com
+.Sh LICENSE
+.Nm
+is in the public domain.
+.Pp
+To the extent possible under law,
+the creator of this work
+has waived all copyright and related or
+neighboring rights to this work.
+.Pp
+.Lk http://creativecommons.org/publicdomain/zero/1.0/

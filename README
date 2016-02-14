@@ -1,0 +1,91 @@
+ARR(1)                      General Commands Manual                     ARR(1)
+
+NAME
+     arr – (re)arrange and select fields on each line
+
+SYNOPSIS
+     arr [-0] [-P | -p padding] expr [files ...]
+
+DESCRIPTION
+     arr unifies and extends the features of cut(1), paste(1), and provides an
+     alternative to dicer(5).
+
+     arr will read one line (or zero separated string, when -0 is used) from
+     each file passed on the command line, and then print the result of
+     expanding expr.
+
+     By default, reading continues until all files are exhausted.  Ended files
+     continue generating empty strings, or padding when -p is used.  When -P
+     is used, reading stops as soon as one file is exhausted.
+
+FORMATTING EXPRESSIONS
+     expr is read as a string containing escape sequences ‘%{...}’ which are
+     parsed according to the following EBNF:
+
+           <expr>   ::= <fields> (("|" <char> | "*") <fields>)* ("&" <char>)?
+           <fields> ::= "~"? <field> ("," <field>)*
+           <field>  ::= "-"? ""+ | ("-"? ""+)? ":" ("-"? ""+)?
+
+     Fields are specified by their position, negative numbers count from the
+     end.  Field ranges are written like n:m where n and m are optional and
+     default to 1 and -1 respectively.  If n is bigger than m, fields are
+     expanded in reverse order.
+
+     Field ranges are combined using , and an initial ~ negates the whole set
+     of field selections.
+
+     Selected fields are joined with the last separator, and then split on c
+     when |c is used.  Alternatively, * splits byte-wise.  A final &c joins
+     the selected fields using c again.
+
+     The first set of fields corresponds to the lines read from each file.
+
+EXIT STATUS
+     The arr utility exits 0 on success, and >0 if an error occurs.
+
+EXAMPLES
+     Print all users from /etc/passwd (read: ‘take line from file 1, split on
+     :, print field 1.’):
+
+           arr '%{1|:1}' /etc/passwd
+
+     List all basenames of shells used (read ‘take line from file 1, split on
+     :, take last field, split on /, take last field.’):
+
+           arr '%{1|:-1|/-1}' /etc/passwd | sort -u
+
+     Remove the TLD from a list of domains:
+
+           arr '%{1|.~-1}'
+
+     Generate PTR addresses for a list of IPv4s:
+
+           arr '%{1|.-1:1}.in-addr.arpa'
+
+     Only print the first 80 chars of each line:
+
+           arr '%{1*:80}'
+
+     Double space text:
+
+           arr '%{1*:& }'
+
+     Format a phone number:
+
+           echo 8005551212 | arr '(%{1*1:3})%{1*4:6}-%{1*7:}'
+
+SEE ALSO
+     cut(1), paste(1), dicer(5)
+
+AUTHORS
+     Christian Neukirchen <chneukirchen@gmail.com>
+
+LICENSE
+     arr is in the public domain.
+
+     To the extent possible under law, the creator of this work has waived all
+     copyright and related or neighboring rights to this work.
+
+     http://creativecommons.org/publicdomain/zero/1.0/
+
+Linux 4.3.4_1                  February 14, 2016                 Linux 4.3.4_1
