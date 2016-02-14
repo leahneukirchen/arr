@@ -8,10 +8,11 @@
 
 USAGE = <<'EOF'
 Usage: arr [-0] [-P|-p PADDING] EXPR [FILES...]
-  EXPR   ::= FIELDS (("|" CHAR | "*") FIELDS)*  # | split on char, * split bytes
-  FIELDS ::= "~"? FIELD ("," FIELD)*            # ~ negates
-  FIELD  ::= "-"? "\d"+                         # negative fields count from back
-           | ("-"? "\d"+)? ":" ("-"? "\d"+)?    # range ends default to 1:-1
+  EXPR   ::= FIELDS (("|" CHAR | "*") FIELDS)* ("&" CHAR)?
+                     # | split on char, * split bytes, & join with char
+  FIELDS ::= "~"? FIELD ("," FIELD)*          # ~ negates
+  FIELD  ::= "-"? "\d"+                       # negative fields count from back
+           | ("-"? "\d"+)? ":" ("-"? "\d"+)?  # range ends default to 1:-1
 EOF
 
 require 'strscan'
@@ -69,6 +70,10 @@ def fmt(ss, d)
       break
     end
   }
+
+  if ss.scan(/\&(.)/)
+    last_split = ss[1]
+  end
 
   unless ss.scan(/\}/)
     abort "parse error at #{ss.inspect}"
