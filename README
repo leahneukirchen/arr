@@ -45,12 +45,12 @@ EXIT STATUS
 
 EXAMPLES
      Print all users from /etc/passwd (read: ‘take line from file 1, split on
-     :, print field 1.’):
+     : , print field 1.’):
 
            arr '%{1|:1}' /etc/passwd
 
      List all basenames of shells used (read ‘take line from file 1, split on
-     :, take last field, split on /, take last field.’):
+     : , take last field, split on /, take last field.’):
 
            arr '%{1|:-1|/-1}' /etc/passwd | sort -u
 
@@ -78,7 +78,7 @@ SEE ALSO
      cut(1), paste(1), dicer(5)
 
 AUTHORS
-     Christian Neukirchen <chneukirchen@gmail.com>
+     Leah Neukirchen <leah@vuxu.org>
 
 LICENSE
      arr is in the public domain.
@@ -88,4 +88,4 @@ LICENSE
 
      http://creativecommons.org/publicdomain/zero/1.0/
 
-Linux 4.3.4_1                  February 14, 2016                 Linux 4.3.4_1
+Void Linux                     February 14, 2016                    Void Linux
