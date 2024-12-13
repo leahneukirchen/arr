@@ -45,12 +45,12 @@ EXIT STATUS
 
 EXAMPLES
      Print all users from /etc/passwd (read: ‘take line from file 1, split on
-     : , print field 1.’):
+     :, print field 1.’):
 
            arr '%{1|:1}' /etc/passwd
 
      List all basenames of shells used (read ‘take line from file 1, split on
-     : , take last field, split on /, take last field.’):
+     :, take last field, split on /, take last field.’):
 
            arr '%{1|:-1|/-1}' /etc/passwd | sort -u
 
