@@ -1,6 +1,8 @@
 README: arr.1
 	mandoc -Tutf8 $< | col -bx >$@
 
+ALL=arr
+
 DESTDIR=
 PREFIX=/usr/local
 BINDIR=$(PREFIX)/bin
